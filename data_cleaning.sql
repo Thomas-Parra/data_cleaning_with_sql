@@ -67,3 +67,78 @@ select
     SPLIT_PART(propertyaddress, ',', 2) AS address2
 from 
     nashvillehousing
+
+
+
+alter table nashvillehousing
+add split_address varchar(255);
+
+update nashvillehousing
+set split_address = SPLIT_PART(propertyaddress, ',', 1);
+
+
+alter table nashvillehousing
+add split_city varchar(255);
+
+update nashvillehousing
+set split_city = SPLIT_PART(propertyaddress, ',', 2);
+
+select 
+	SPLIT_PART(owneraddress,',',3) as split_state_owner,
+	SPLIT_PART(owneraddress,',',2) as split_city_owner,
+	SPLIT_PART(owneraddress,',',1) as split_address_owner
+from 
+	nashvillehousing;
+
+
+alter table nashvillehousing
+add split_state_owner varchar(255);
+
+update nashvillehousing
+set split_state_owner = SPLIT_PART(owneraddress,',',3);
+
+alter table nashvillehousing
+add split_city_owner varchar(255);
+
+update nashvillehousin  g
+set split_city_owner = SPLIT_PART(owneraddress,',',2);
+
+alter table nashvillehousing
+add split_address_owner varchar(255);
+
+update nashvillehousing
+set split_address_owner = SPLIT_PART(owneraddress,',',1);
+
+
+-- Change y and n to yes and no in "Sold as Vacant" column
+
+select distinct(SoldAsVacant), count(SoldAsVacant)
+from nashvillehousing
+group by 1
+order by 2 
+
+
+update nashvillehousing
+set soldasvacant = case when soldasvacant = 'Y' then 'Yes'
+			 			when soldasvacant = 'N' then 'No'
+	    	 			else soldasvacant
+	     				end;
+						
+
+
+-- Remove duplicates using window functions and subqueries
+
+
+ALTER TABLE nashvillehousing ADD COLUMN row_num NUMERIC;
+
+UPDATE nashvillehousing
+SET row_num = subquery.row_num
+FROM (
+  SELECT uniqueid, ROW_NUMBER() OVER (PARTITION BY parcelid, propertyaddress, saleprice, legalreference ORDER BY uniqueid) AS row_num
+  FROM nashvillehousing
+) AS subquery
+WHERE nashvillehousing.uniqueid = subquery.uniqueid;
+
+delete
+from nashvillehousing
+where row_num > 1
